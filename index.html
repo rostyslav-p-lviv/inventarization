@@ -3,20 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Інвентаризація v1.3.6</title>
+    <title>Інвентаризація v1.3.7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        /* --- CSS Reset (Minimal) --- */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-        body { min-height: 100vh; line-height: 1.5; }
-        input, button, textarea, select { font: inherit; border: none; background: none; color: inherit; }
-        button { cursor: pointer; }
-        table { border-collapse: collapse; border-spacing: 0; }
-        img, picture, video, canvas, svg { display: block; max-width: 100%; }
-
-        /* --- Змінні та Теми (Як у v1.3.5 / v3.3 Opt) --- */
+        /* --- Базові стилі та змінні (Як у v1.3.6 / v3.3 Opt) --- */
         :root {
             --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
             /* Світла тема */
@@ -80,27 +71,50 @@
         }
 
         /* --- Базові стилі --- */
-        body { font-family: var(--font-sans); background-color: var(--bg-color); color: var(--text-color); font-size: 16px; line-height: 1.5; display: flex; flex-direction: column; padding-top: var(--safe-area-top); min-height: 100vh; overscroll-behavior-y: contain; }
-        #app { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        html, body { height: 100%; overscroll-behavior-y: contain; }
+        body { font-family: var(--font-sans); background-color: var(--bg-color); color: var(--text-color); font-size: 16px; line-height: 1.5; display: flex; flex-direction: column; padding-top: var(--safe-area-top); min-height: 100vh; }
+        #app { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; /* Важливо для правильної прокрутки контенту */ }
         small { font-size: 0.8em; color: var(--secondary-text-color); }
 
         /* --- Header --- */
         header { background-color: var(--secondary-bg-color); padding: 12px var(--padding-main); padding-left: max(var(--padding-main), var(--safe-area-left)); padding-right: max(var(--padding-main), var(--safe-area-right)); text-align: center; border-bottom: 1px solid var(--separator-color); flex-shrink: 0; position: sticky; top: var(--safe-area-top); z-index: 10; }
         header h1 { font-size: 1.15em; font-weight: 600; color: var(--text-color); }
 
-        /* --- Tab Bar --- */
-        .tab-bar { display: flex; background-color: var(--secondary-bg-color); border-top: 1px solid var(--separator-color); padding-bottom: var(--safe-area-bottom); flex-shrink: 0; position: sticky; bottom: 0; z-index: 10; }
-        .tab-button { flex: 1; padding: 12px 5px; text-align: center; background: none; font-family: inherit; font-size: 0.85em; color: var(--secondary-text-color); cursor: pointer; transition: color 0.2s ease, background-color 0.2s ease; position: relative; border-top: 3px solid transparent; margin-bottom: -1px; }
-        .tab-button.active { color: var(--highlight-color); font-weight: 500; border-top-color: var(--highlight-color); }
+        /* --- Tab Bar (Тепер зверху) --- */
+        .tab-bar {
+            display: flex; background-color: var(--secondary-bg-color);
+            border-bottom: 1px solid var(--separator-color); /* Межа знизу */
+            flex-shrink: 0;
+            position: sticky; /* Прилипає під хедером */
+            top: calc(49px + var(--safe-area-top)); /* Висота хедера (12+12+16*1.15 ~ 44px) + 1px border + top safe area. Потребує підгонки! */
+            /* Якщо висота хедера змінюється, це значення треба оновити */
+            z-index: 9; /* Нижче хедера */
+        }
+        /* Стилі для кнопок табів */
+        .tab-button {
+            flex: 1; padding: 10px 5px; /* Зменшено вертикальний паддінг */
+            text-align: center; background: none; font-family: inherit; font-size: 0.9em; /* Трохи збільшено */
+            color: var(--secondary-text-color); cursor: pointer; transition: color 0.2s ease, border-color 0.2s ease;
+            position: relative; border-bottom: 3px solid transparent; /* Межа знизу для активної вкладки */
+            margin-bottom: -1px; /* Компенсація межі контейнера */
+            border-top: none; /* Забираємо верхню межу, якщо була */
+        }
+        .tab-button.active { color: var(--highlight-color); font-weight: 500; border-bottom-color: var(--highlight-color); }
         .tab-button:active { background-color: var(--tab-inactive-bg); }
         .tab-button.active::after { display: none; }
 
         /* --- Контент вкладок --- */
-        .tab-content { display: none; flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: var(--padding-main); padding-left: max(var(--padding-main), var(--safe-area-left)); padding-right: max(var(--padding-main), var(--safe-area-right)); opacity: 0; transition: opacity 0.3s ease-in-out; }
+        .tab-content {
+            display: none; flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            /* Додаємо нижній відступ для безпечної зони, оскільки таб-бар тепер зверху */
+            padding: var(--padding-main); padding-left: max(var(--padding-main), var(--safe-area-left)); padding-right: max(var(--padding-main), var(--safe-area-right)); padding-bottom: calc(var(--padding-main) + var(--safe-area-bottom));
+            opacity: 0; transition: opacity 0.3s ease-in-out;
+        }
         .tab-content.active { display: block; opacity: 1; }
         .tab-content h2 { font-size: 1.5em; font-weight: 600; margin-bottom: var(--padding-main); color: var(--text-color); }
 
-        /* --- Елементи форм --- */
+        /* --- Елементи форм (Без змін від v1.3.6) --- */
         .form-section { margin-bottom: var(--padding-main); background-color: var(--secondary-bg-color); border-radius: var(--radius-main); padding: var(--padding-main); box-shadow: var(--card-shadow); transition: box-shadow 0.3s ease; }
         .form-section.pulsate { animation: pulsate 0.5s ease-in-out; }
         @keyframes pulsate { 0% { transform: scale(1); } 50% { transform: scale(1.01); } 100% { transform: scale(1); } }
@@ -110,42 +124,25 @@
         input[type="text"]:focus, input[type="number"]:focus, input[type="search"]:focus, select:focus { border-color: var(--input-focus-border); outline: none; box-shadow: var(--input-focus-shadow); }
         input:disabled, select:disabled, button:disabled { background-color: var(--tab-inactive-bg); color: var(--secondary-text-color); cursor: not-allowed; opacity: 0.7; border-color: var(--input-border-color); box-shadow: none !important; transform: none !important; }
         button:disabled { background-color: var(--separator-color); color: var(--secondary-text-color); }
-
-        /* --- Кнопки дій та інпути з кнопками --- */
         .file-input-wrapper { position: relative; overflow: hidden; display: block; width: 100%; margin-bottom: 10px; }
         #file-input { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
         button:active:not(:disabled) { transform: scale(0.98); }
         #save-button:hover:not(:disabled) { background-color: var(--highlight-hover-color); }
         #clear-button { background-color: var(--danger); }
         #clear-button:hover:not(:disabled) { background-color: var(--danger-hover-color); }
-
-        /* --- Стилі для інпуту з кнопкою --- */
         .input-with-button { display: flex; align-items: center; gap: 8px; margin-bottom: var(--padding-main); }
         .input-with-button input { flex-grow: 1; margin-bottom: 0; }
-        .input-action-button {
-             flex-shrink: 0; width: 44px; height: 44px; /* Фіксований розмір */
-             padding: 0; margin-bottom: 0; font-size: 1.6em; line-height: 42px; /* Центрування стрілки */
-             text-align: center; background-color: var(--highlight-color); color: var(--button-text-color);
-             border-radius: var(--radius-controls);
-        }
+        .input-action-button { flex-shrink: 0; width: 44px; height: 44px; padding: 0; margin-bottom: 0; font-size: 1.6em; line-height: 42px; text-align: center; background-color: var(--highlight-color); color: var(--button-text-color); border-radius: var(--radius-controls); }
         .input-action-button:disabled { background-color: var(--separator-color); color: var(--secondary-text-color); opacity: 0.7; cursor: not-allowed; }
         .input-action-button:active:not(:disabled) { transform: scale(0.95); }
-        /* Коригуємо відступ для small під інпутом з кнопкою */
-        .form-section .input-with-button + small {
-             display: block;
-             margin-top: calc(-1 * var(--padding-main) + 8px); /* Піднімаємо */
-             margin-bottom: var(--padding-main);
-         }
-
-        /* Select та Пошук */
+        .form-section .input-with-button + small { display: block; margin-top: calc(-1 * var(--padding-main) + 8px); margin-bottom: var(--padding-main); }
         .filter-section { margin-bottom: var(--padding-main); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
         .filter-section label { margin-bottom: 0; flex-shrink: 0; }
         select#filter-select, input#name-search-input { padding: 10px 12px; font-size: 0.95em; margin-bottom: 0; flex-grow: 1; }
         select#filter-select { max-width: 260px; padding-right: 40px; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22%23${encodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--secondary-text-color').trim().substring(1))}%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M4.22%206.22a.75.75%200%20011.06%200L8%208.94l2.72-2.72a.75.75%200%20111.06%201.06l-3.25%203.25a.75.75%200%2001-1.06%200L4.22%207.28a.75.75%200%20010-1.06z%22%20clip-rule%3D%22evenodd%22%20%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 14px center; background-size: 14px auto; cursor: pointer; }
         select#filter-select:disabled { cursor: not-allowed; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22%23${encodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--separator-color').trim().substring(1))}%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M4.22%206.22a.75.75%200%20011.06%200L8%208.94l2.72-2.72a.75.75%200%20111.06%201.06l-3.25%203.25a.75.75%200%2001-1.06%200L4.22%207.28a.75.75%200%20010-1.06z%22%20clip-rule%3D%22evenodd%22%20%2F%3E%3C%2Fsvg%3E'); }
         input#name-search-input { max-width: 350px; }
-        input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; height: 1em; width: 1em; margin-left: .4em; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a0a0a0'><path d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/></svg>") no-repeat 50% 50%; background-size: contain; opacity: .5; cursor: pointer; }
-        input[type="search"]:focus::-webkit-search-cancel-button { opacity: .8; }
+        input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; height: 1em; width: 1em; margin-left: .4em; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a0a0a0'><path d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/></svg>") no-repeat 50% 50%; background-size: contain; opacity: .5; cursor: pointer; } input[type="search"]:focus::-webkit-search-cancel-button { opacity: .8; }
 
         /* --- Картка товару --- */
         #item-card { background-color: var(--secondary-bg-color); border-radius: var(--radius-main); padding: var(--padding-main); padding-left: calc(var(--padding-main) + 10px); margin-top: var(--padding-main); box-shadow: var(--card-shadow); position: relative; overflow: hidden; display: none; animation: fadeInItemCard 0.3s ease-out; border: 1px solid var(--separator-color); }
@@ -199,18 +196,24 @@
 <body>
     <div id="app">
         <header>
-            <h1>Інвентаризація v1.3.6</h1> </header>
+            <h1>Інвентаризація v1.3.7</h1> </header>
+
+        <nav class="tab-bar">
+            <button class="tab-button active" data-tab="inventory-tab">Сканування</button>
+            <button class="tab-button" data-tab="items-tab">Список товарів</button>
+            <button class="tab-button" data-tab="result-tab">Результати</button>
+        </nav>
 
         <main class="tab-content active" id="inventory-tab">
             <div class="form-section">
                 <label for="sku-input">Артикул товару</label>
                 <div class="input-with-button">
-                    <input type="text" id="sku-input" placeholder="Скануйте або введіть артикул">
+                    <input type="text" inputmode="numeric" id="sku-input" placeholder="Скануйте або введіть артикул">
                     <button type="button" id="sku-submit-button" class="input-action-button" aria-label="Знайти/Створити артикул">➜</button>
                 </div>
 
                 <label for="quantity-input">Зміна кількості</label>
-                 <div class="input-with-button">
+                <div class="input-with-button">
                     <input type="text" inputmode="numeric" id="quantity-input" placeholder="Число(+) або 0+Число(-)" disabled>
                     <button type="button" id="quantity-submit-button" class="input-action-button" aria-label="Підтвердити кількість" disabled>➜</button>
                  </div>
@@ -232,7 +235,7 @@
         </main>
 
         <main class="tab-content" id="items-tab">
-             <h2>Список Товарів</h2>
+            <h2>Список Товарів</h2>
             <p id="file-info" style="font-size: 0.9em; color: var(--secondary-text-color); margin-bottom: var(--padding-main);">Файл не завантажено.</p>
             <div id="progress-section">
                  <label>Прогрес</label>
@@ -266,7 +269,7 @@
         </main>
 
         <main class="tab-content" id="result-tab">
-             <h2>Результати</h2>
+            <h2>Результати</h2>
             <p id="result-info" style="font-size: 0.9em; color: var(--secondary-text-color); margin-bottom: var(--padding-main);">Список розбіжностей.</p>
             <div id="results-table-container">
                 <table id="results-table">
@@ -275,12 +278,6 @@
                 </table>
             </div>
         </main>
-
-        <nav class="tab-bar">
-            <button class="tab-button active" data-tab="inventory-tab">Сканування</button>
-            <button class="tab-button" data-tab="items-tab">Список товарів</button>
-            <button class="tab-button" data-tab="result-tab">Результати</button>
-        </nav>
 
         <div id="toast-notification"></div>
 
@@ -297,11 +294,11 @@
 
         // --- DOM Елементи ---
         const uploadButton = document.getElementById('upload-button'); const fileInput = document.getElementById('file-input'); const skuInput = document.getElementById('sku-input'); const quantityInput = document.getElementById('quantity-input'); const itemCard = document.getElementById('item-card'); const itemNameEl = document.getElementById('item-name'); const itemSkuEl = document.getElementById('item-sku'); const itemExpectedEl = document.getElementById('item-expected'); const itemActualEl = document.getElementById('item-actual'); const itemStatusEl = document.getElementById('item-status'); const saveButton = document.getElementById('save-button'); const clearButton = document.getElementById('clear-button'); const progressBar = document.getElementById('progress-bar'); const progressSection = document.getElementById('progress-section'); const itemsTableBody = document.getElementById('items-table-body'); const filterSelect = document.getElementById('filter-select'); const nameSearchInput = document.getElementById('name-search-input'); const resultsTableBody = document.getElementById('results-table-body'); const fileInfoEl = document.getElementById('file-info'); const tabButtons = document.querySelectorAll('.tab-button'); const tabContents = document.querySelectorAll('.tab-content'); const toastNotification = document.getElementById('toast-notification'); const themeToggleButton = document.getElementById('theme-toggle-button');
-        // ДОДАНО: Посилання на нові кнопки
+        // Додано кнопки підтвердження
         const skuSubmitButton = document.getElementById('sku-submit-button');
         const quantitySubmitButton = document.getElementById('quantity-submit-button');
 
-        // --- IndexedDB Функції (без змін) ---
+        // --- IndexedDB Функції (Без змін) ---
         function openDB() { return new Promise((resolve, reject) => { try { if (!window.indexedDB) { return reject("No IndexedDB support"); } const request = indexedDB.open(DB_NAME, DB_VERSION); request.onerror = (e) => reject(`DB Error: ${e.target?.error?.message}`); request.onsuccess = (e) => { if (!e.target?.result) return reject("DB open null result"); db = e.target.result; console.log("DB opened"); resolve(db); }; request.onupgradeneeded = (e) => { console.log("onupgradeneeded"); if (!e.target?.result) return; db = e.target.result; try { if (!db.objectStoreNames.contains(ITEMS_STORE_NAME)) { const s = db.createObjectStore(ITEMS_STORE_NAME, { keyPath: 'sku' }); s.createIndex('name', 'name'); s.createIndex('status', 'status'); } if (!db.objectStoreNames.contains(META_STORE_NAME)) { db.createObjectStore(META_STORE_NAME, { keyPath: 'id' }); } } catch (err) { console.error("Store creation error:", err); } console.log("DB upgrade done."); }; request.onblocked = () => reject("DB blocked"); } catch (e) { reject(`openDB exception: ${e}`); } }); }
         function saveItemToDB(item) { return new Promise((resolve, reject) => { if (!db) return reject("DB missing"); if (!item?.sku) return reject("Bad item"); try { const tx = db.transaction([ITEMS_STORE_NAME], 'readwrite'); tx.objectStore(ITEMS_STORE_NAME).put(item).onerror = (e) => reject(`Write Err: ${e.target?.error?.message}`); tx.oncomplete = resolve; tx.onerror = (e) => reject(`Tx Err: ${e.target?.error?.message}`); } catch (e) { reject(`Save Ex: ${e}`); } }); }
         function saveMetadataToDB(metadata) { return new Promise((resolve, reject) => { if (!db) return reject("DB missing"); try { const tx = db.transaction([META_STORE_NAME], 'readwrite'); tx.objectStore(META_STORE_NAME).put({ ...metadata, id: META_KEY }).onerror = (e) => reject(`Meta Write Err: ${e.target?.error?.message}`); tx.oncomplete = resolve; tx.onerror = (e) => reject(`Meta Tx Err: ${e.target?.error?.message}`); } catch(e) { reject(`SaveMeta Ex: ${e}`); } }); }
@@ -319,93 +316,88 @@
 
         // --- Логіка інвентаризації ---
         function findItemBySku(sku) { if(!sku)return null; const s=sku.trim().toLowerCase(); return items.find(i=>String(i.sku).toLowerCase()===s); }
-        // ЗМІНЕНО: Додано async, логіку confirm/prompt/create
+        // ЗМІНЕНО: Додано керування кнопкою кількості та логування фокусу
         async function handleSkuInput() {
             const skuVal=skuInput?.value; if(skuVal==null)return; const sku=skuVal.trim(); const found=findItemBySku(sku); currentItem=null;
             if(found){
-                lastDisplayedItem={...found}; displayItemCard(lastDisplayedItem);
-                if(quantityInput){ quantityInput.disabled = false; quantityInput.value = ''; quantityInput.placeholder = `Пот:${found.actualQuantity??0}. Додати? 0-Відняти?`; }
-                if(quantitySubmitButton) quantitySubmitButton.disabled = false; // Вмикаємо кнопку
-                console.log("Focusing quantity (existing item)"); if(quantityInput) quantityInput.focus(); // Фокус на кількість
-                if(itemCard){ itemCard.classList.add('pulsate'); setTimeout(()=>itemCard?.classList.remove('pulsate'), 500); }
-                currentItem = found;
+                 lastDisplayedItem={...found}; displayItemCard(lastDisplayedItem);
+                 if(quantityInput) { quantityInput.disabled = false; quantityInput.value = ''; quantityInput.placeholder = `Пот:${found.actualQuantity??0}. Додати? 0-Відняти?`; }
+                 if(quantitySubmitButton) quantitySubmitButton.disabled = false; // Вмикаємо кнопку
+                 console.log("Focusing quantity (existing item)"); if(quantityInput) quantityInput.focus(); // Фокус
+                 if(itemCard){ itemCard.classList.add('pulsate'); setTimeout(()=>itemCard?.classList.remove('pulsate'), 500); }
+                 currentItem = found;
             } else if (sku !== '') {
-                clearItemCard(); lastDisplayedItem = null;
-                if(quantityInput) quantityInput.disabled = true;
-                if(quantitySubmitButton) quantitySubmitButton.disabled = true; // Вимикаємо кнопку к-сті
-
-                if(confirm(`Арт "${sku}"?\nСтворити?`)) {
-                    const name = prompt(`Назва для "${sku}":`, '');
-                    const fName = (name === null || name.trim() === '') ? `Новий ${sku}` : name.trim();
-                    const newItem = { sku, name: fName, expectedQuantity: 0, actualQuantity: null, status: STATUS_MAP.NONE };
-                    try {
-                        items.push(newItem); await saveItemToDB(newItem); console.log(`${sku} saved.`);
-                        lastDisplayedItem = { ...newItem }; displayItemCard(lastDisplayedItem);
-                        if(quantityInput) { quantityInput.disabled = false; quantityInput.value = ''; quantityInput.placeholder = `К-сть ${sku}`; }
-                        if(quantitySubmitButton) quantitySubmitButton.disabled = false; // Вмикаємо кнопку
-                        console.log("Focusing quantity (new item)"); if(quantityInput) quantityInput.focus(); // Фокус на кількість
-                        currentItem = newItem; updateUI(); showToast(`Створено:${sku}`, 'success'); vibrateBasic();
-                    } catch (err) {
-                        console.error(`Save ${sku} err:`, err); showToast(`Помилка:${err}`, 'error'); items = items.filter(i => i.sku !== sku); updateUI(); if (skuInput) skuInput.focus();
-                    }
-                } else {
-                    console.log("Create cancelled."); if (skuInput) { skuInput.value = ''; skuInput.focus(); }
-                }
+                 clearItemCard(); lastDisplayedItem = null;
+                 if(quantityInput) quantityInput.disabled = true;
+                 if(quantitySubmitButton) quantitySubmitButton.disabled = true; // Вимикаємо кнопку
+                 if(confirm(`Арт "${sku}"?\nСтворити?`)) {
+                      const name = prompt(`Назва для "${sku}":`, ''); const fName = (name===null||name.trim()==='') ? `Новий ${sku}` : name.trim();
+                      const newItem = { sku, name:fName, expectedQuantity:0, actualQuantity:null, status:STATUS_MAP.NONE };
+                      try {
+                          items.push(newItem); await saveItemToDB(newItem); console.log(`${sku} saved.`);
+                          lastDisplayedItem={...newItem}; displayItemCard(lastDisplayedItem);
+                          if(quantityInput) { quantityInput.disabled = false; quantityInput.value = ''; quantityInput.placeholder = `К-сть ${sku}`; }
+                          if(quantitySubmitButton) quantitySubmitButton.disabled = false; // Вмикаємо кнопку
+                          console.log("Focusing quantity (new item)"); if(quantityInput) quantityInput.focus(); // Фокус
+                          currentItem = newItem; updateUI(); showToast(`Створено:${sku}`, 'success'); vibrateBasic();
+                      } catch (err) {
+                          console.error(`Save ${sku} err:`, err); showToast(`Помилка:${err}`, 'error'); items=items.filter(i => i.sku !== sku); updateUI(); if(skuInput) skuInput.focus();
+                      }
+                 } else {
+                     if (skuInput) { skuInput.value = ''; skuInput.focus(); }
+                 }
             } else { // Поле SKU порожнє
-                if(quantityInput) quantityInput.disabled = true;
-                if(quantitySubmitButton) quantitySubmitButton.disabled = true; // Вимикаємо кнопку к-сті
-                if(quantityInput) quantityInput.placeholder="Число(+) або 0+Число(-)";
+                 if(quantityInput) quantityInput.disabled = true;
+                 if(quantitySubmitButton) quantitySubmitButton.disabled = true; // Вимикаємо кнопку
+                 if(quantityInput) quantityInput.placeholder="Число(+) або 0+Число(-)";
             }
         }
-        // ЗМІНЕНО: Додано перевірку event?.type
+        // ЗМІНЕНО: Додано перевірку event?.type для коректної роботи з кліком кнопки
         function handleQuantityInput(event) {
-             // Дозволяємо виконання, якщо це не keydown, АБО якщо це Enter, АБО якщо event не існує (клік кнопки)
-            if (event?.type === 'keydown' && event?.key !== 'Enter') { console.log("Ignoring keydown (not Enter)"); return; }
+            if (event?.type === 'keydown' && event?.key !== 'Enter') { return; } // Ігноруємо не-Enter клавіші
             if (!currentItem) { showToast("Знайдіть товар.", "warning"); return; }
-            const inp = quantityInput?.value?.trim(); if (!inp) return; let newQ; const itemU = { ...currentItem }; const curA = itemU.actualQuantity ?? 0;
-            try { if (inp.startsWith('0')) { if (inp.length<=1 || !/^\d+$/.test(inp.substring(1))) { showToast("0+цифри.", "warning"); if(quantityInput) quantityInput.value=''; return; } const sub=parseInt(inp.substring(1), 10); newQ=Math.max(0, curA-sub); } else { if (!/^\d+$/.test(inp)) { showToast("Число.", "warning"); if(quantityInput) quantityInput.value=''; return; } const add=parseInt(inp, 10); if (add > 0) { newQ=curA+add; } else { showToast("Додавати > 0.", "warning"); if(quantityInput) quantityInput.value=''; return; } } }
+            const inp=quantityInput?.value?.trim(); if (!inp) return; let newQ; const itemU={...currentItem}; const curA=itemU.actualQuantity??0;
+            try { if (inp.startsWith('0')) { if (inp.length<=1 || !/^\d+$/.test(inp.substring(1))) { showToast("0+цифри.", "warning"); if(quantityInput) quantityInput.value=''; return; } const sub=parseInt(inp.substring(1), 10); newQ=Math.max(0, curA-sub); } else { if (!/^\d+$/.test(inp)) { showToast("Для додавання - число.", "warning"); if(quantityInput) quantityInput.value=''; return; } const add=parseInt(inp, 10); if (add > 0) { newQ=curA+add; } else { showToast("Додавати > 0.", "warning"); if(quantityInput) quantityInput.value=''; return; } } }
             catch (e) { console.error("Parse err:", e); showToast("Помилка обробки.", "error"); if(quantityInput) quantityInput.value=''; return; }
             itemU.actualQuantity = newQ; itemU.status = calculateStatus(itemU.expectedQuantity, itemU.actualQuantity);
-            console.log(`Save:${itemU.sku}, Q:${newQ}`);
             saveItemToDB(itemU).then(() => { const i = items.findIndex(it => it.sku === itemU.sku); if (i !== -1) items[i] = itemU; else console.error(`Idx ${itemU.sku}!`); lastDisplayedItem = { ...itemU }; updateUI(); showToast(`К-сть ${itemU.sku} оновлено.`, 'success', 2000); vibrateBasic(); clearInputs(); if (skuInput) skuInput.focus(); }).catch(err => { console.error("Save err:", err); showToast(`Помилка:${err}`, 'error'); if (quantityInput) quantityInput.focus(); });
         }
         function calculateStatus(expected, actual) { if(actual==null)return STATUS_MAP.NONE;const nE=Number(expected);const nA=Number(actual);if(isNaN(nE)||isNaN(nA))return STATUS_MAP.NONE;if(nA===nE)return STATUS_MAP.MATCH;else if(nA<nE)return STATUS_MAP.SHORTAGE;else return STATUS_MAP.SURPLUS; }
 
         // --- Оновлення UI ---
         function updateUI() { try{if(progressSection)updateProgressAndStats();if(itemsTableBody)renderTable();if(resultsTableBody)renderResultsTable();updateControlStates();updateFileInfo();if(lastDisplayedItem&&itemCard)displayItemCard(lastDisplayedItem);else if(itemCard)clearItemCard();}catch(e){console.error("UpdateUI err:",e);} }
-        // ЗМІНЕНО: renderTable тепер фільтрує і за назвою
         function renderTable() { if(!itemsTableBody)return;itemsTableBody.innerHTML='';if(items.length===0){itemsTableBody.innerHTML='<tr class="empty-msg"><td colspan="5">Пусто.</td></tr>';return;}const nameSearch=nameSearchInput?.value?.trim().toLowerCase()||'';let statusFiltered=items.filter(i=>currentFilter==='all'||i.status===STATUS_MAP[currentFilter.toUpperCase()]||(currentFilter==='unchecked'&&i.status===STATUS_MAP.NONE));const finalFiltered=nameSearch?statusFiltered.filter(i=>i.name.toLowerCase().includes(nameSearch)):statusFiltered;if(finalFiltered.length===0){let msg=`Фільтр:"${filterSelect?.options[filterSelect.selectedIndex]?.text||currentFilter}"`;if(nameSearch){msg+=`|Пошук:"${nameSearch}"`;}msg+=": немає.";itemsTableBody.innerHTML=`<tr class="empty-msg"><td colspan="5">${msg}</td></tr>`;return;}const frag=document.createDocumentFragment();finalFiltered.forEach(i=>frag.appendChild(createRowElement(i)));itemsTableBody.appendChild(frag);}
         function renderResultsTable() { if(!resultsTableBody)return;resultsTableBody.innerHTML='';const disc=items.filter(i=>i.status===STATUS_MAP.SHORTAGE||i.status===STATUS_MAP.SURPLUS);disc.sort((a,b)=>{const o={[STATUS_MAP.SHORTAGE]:1,[STATUS_MAP.SURPLUS]:2};return o[a.status]-o[b.status]||String(a.sku).localeCompare(String(b.sku))});if(disc.length===0){resultsTableBody.innerHTML='<tr class="empty-msg"><td colspan="6">Розбіжностей немає.</td></tr>';return;}const frag=document.createDocumentFragment();disc.forEach(i=>frag.appendChild(createRowElement(i,true)));resultsTableBody.appendChild(frag);}
         function createRowElement(item, includeDifference=false) { const r=document.createElement('tr');r.dataset.sku=item.sku;const sCls=STATUS_CLASS_MAP[item.status]||STATUS_CLASS_MAP.NONE;r.className=sCls;r.addEventListener('click',()=>handleTableRowClick(item.sku));let pT;const cLP=()=>clearTimeout(pT);r.addEventListener('touchstart',(e)=>{clearTimeout(pT);pT=window.setTimeout(()=>{handleTableRowLongPress(item.sku);},700);},{passive:false});r.addEventListener('touchend',cLP);r.addEventListener('touchmove',cLP);r.addEventListener('touchcancel',cLP);r.addEventListener('contextmenu',(e)=>{e.preventDefault();handleTableRowLongPress(item.sku);});const sTxt=item.status||STATUS_MAP.NONE;const aQty=item.actualQuantity!==null?item.actualQuantity:'-';const sTxtCls=STATUS_TEXT_CLASS_MAP[sTxt]||'';const sC=document.createElement('td');sC.innerHTML=`<span class="status-indicator"></span><span class="${sTxtCls}">${sTxt}</span>`;const skuC=document.createElement('td');skuC.textContent=item.sku;const nmC=document.createElement('td');nmC.textContent=item.name;const exC=document.createElement('td');exC.textContent=item.expectedQuantity;const acC=document.createElement('td');acC.textContent=aQty;r.appendChild(sC);r.appendChild(skuC);r.appendChild(nmC);r.appendChild(exC);r.appendChild(acC);if(includeDifference){let diff='-',dTxt='-',dCls='';if(item.actualQuantity!==null&&typeof item.expectedQuantity==='number'){diff=item.actualQuantity-item.expectedQuantity;dTxt=(diff>0?'+':'')+diff;dCls=diff>0?'status-text-surplus':(diff<0?'status-text-shortage':'');}const dC=document.createElement('td');dC.textContent=dTxt;dC.className=dCls;r.appendChild(dC);} return r;}
-        function handleTableRowClick(sku) { if(sku==null)return;switchToTab('inventory-tab');if(skuInput)skuInput.value=sku;handleSkuInput();vibrateBasic();}
+        function handleTableRowClick(sku) { if(sku==null)return;switchToTab('inventory-tab');if(skuInput)skuInput.value=sku;handleSkuInput();} // Забираємо вібрацію звідси, бо вона є в handleSkuInput
         function handleTableRowLongPress(sku) { if(sku==null)return;showToast(`Натиск:${sku}`,'info',1500);vibrateNotification();if(currentItem?.sku===sku&&quantityInput){quantityInput.focus();quantityInput.select();}else{handleTableRowClick(sku);}}
         function displayItemCard(item) { if(!itemCard||!item){clearItemCard();return;}if(itemNameEl)itemNameEl.textContent=item.name??'-';if(itemSkuEl)itemSkuEl.textContent=item.sku??'-';if(itemExpectedEl)itemExpectedEl.textContent=item.expectedQuantity??'-';if(itemActualEl)itemActualEl.textContent=item.actualQuantity!==null?item.actualQuantity:'-';const sTxt=item.status||STATUS_MAP.NONE;if(itemStatusEl){itemStatusEl.textContent=sTxt;itemStatusEl.className=STATUS_TEXT_CLASS_MAP[sTxt]||'';}itemCard.className='';const sCls=STATUS_CLASS_MAP[sTxt]||STATUS_CLASS_MAP.NONE;itemCard.classList.add(sCls);itemCard.classList.add('visible');}
         function clearItemCard() { if(itemCard)itemCard.classList.remove('visible');}
         function calculateStats() { const t=items.length;let c=0,m=0,s=0,p=0;items.forEach(i=>{if(i.status!==STATUS_MAP.NONE){c++;if(i.status===STATUS_MAP.MATCH)m++;else if(i.status===STATUS_MAP.SHORTAGE)s++;else if(i.status===STATUS_MAP.SURPLUS)p++;}});return{total:t,checked:c,match:m,shortage:s,surplus:p};}
         function updateProgressAndStats() { if(!progressBar||!progressSection||!items)return;const sTV=document.getElementById('stat-total')?.querySelector('.stat-value');const sCV=document.getElementById('stat-checked')?.querySelector('.stat-value');const sMV=document.getElementById('stat-match')?.querySelector('.stat-value');const sSV=document.getElementById('stat-shortage')?.querySelector('.stat-value');const sPV=document.getElementById('stat-surplus')?.querySelector('.stat-value');if(items.length===0){progressBar.style.width='0%';if(sTV)sTV.textContent='0';if(sCV)sCV.textContent='0';if(sMV)sMV.textContent='0';if(sSV)sSV.textContent='0';if(sPV)sPV.textContent='0';progressSection.classList.remove('visible');return;}progressSection.classList.add('visible');const st=calculateStats();const prg=st.total>0?Math.round((st.checked/st.total)*100):0;progressBar.style.width=`${prg}%`;if(sTV)sTV.textContent=st.total;if(sCV)sCV.textContent=st.checked;if(sMV)sMV.textContent=st.match;if(sSV)sSV.textContent=st.shortage;if(sPV)sPV.textContent=st.surplus;}
 
-        // Змінено: Перейменована + логіка для кнопок/пошуку
+        // Оновлена функція керування станом контролів
         function updateControlStates() {
             const hasItems = items.length > 0;
             if(saveButton) saveButton.disabled = !hasItems;
             if(clearButton) clearButton.disabled = !hasItems;
             if(filterSelect) { filterSelect.disabled = !hasItems; filterSelect.value = currentFilter; }
             if(nameSearchInput) { nameSearchInput.disabled = !hasItems; }
-            // Кнопки біля інпутів - їх стан залежить від стану відповідного інпуту
-            if(skuSubmitButton) skuSubmitButton.disabled = skuInput?.disabled; // Кнопка SKU активна завжди, коли активне поле SKU (зазвичай завжди)
-            if(quantitySubmitButton) quantitySubmitButton.disabled = quantityInput?.disabled; // Кнопка К-сті активна, коли активне поле К-сті
+            // Кнопки біля інпутів
+            if(skuSubmitButton) skuSubmitButton.disabled = false; // Кнопка SKU завжди активна
+            if(quantitySubmitButton) quantitySubmitButton.disabled = quantityInput?.disabled; // Залежить від поля кількості
             updateSelectArrowColor();
         }
 
         function updateFileInfo() { if(!fileInfoEl)return;if(fileMetadata.originalName){const dS=fileMetadata.loadDate?`зав:${fileMetadata.loadDate.toLocaleString('uk',{dateStyle:'short',timeStyle:'short'})}`:'';fileInfoEl.textContent=`Файл:${fileMetadata.originalName} (${dS})`;}else{fileInfoEl.textContent='Файл не завантажено.';} }
         function handleFilterChange() { if(!filterSelect)return;currentFilter=filterSelect.value;renderTable();vibrateBasic(); }
-        function handleNameSearchInput() { renderTable(); } // Просто перемальовуємо таблицю
+        function handleNameSearchInput() { renderTable(); } // Просто перемальовуємо
 
         function switchToTab(tabId) { if(!tabId)return;tabContents.forEach(c=>c?.classList.remove('active'));document.getElementById(tabId)?.classList.add('active');tabButtons.forEach(b=>{b?.classList.toggle('active',b.dataset.tab===tabId);});if(tabId==='items-tab')renderTable();else if(tabId==='result-tab')renderResultsTable();vibrateBasic();}
 
         // --- Очищення даних ---
         function clearAllData(confirmFirst = true) { const doClear=()=>{items=[];fileMetadata={originalName:null,loadDate:null};currentItem=null;lastDisplayedItem=null;currentFilter='all';Promise.all([clearItemsDB(),clearMetadataDB()]).then(()=>{console.log("БД очищено.");clearInputs();updateUI();showToast("Дані очищено.");vibrateNotification();switchToTab('inventory-tab');if(skuInput)skuInput.focus();}).catch(err=>{console.error("Помилка:",err);showToast(`Помилка:${err}`,'error');clearInputs();updateUI();});};if(confirmFirst){if(confirm('Очистити дані?'))doClear();}else{doClear();} }
-        // Змінено: clearInputs тепер вимикає і кнопку к-сті
+        // Змінено: clearInputs оновлює стан кнопки submit quantity
          function clearInputs() {
             if(skuInput) skuInput.value = '';
             if(quantityInput) { quantityInput.value = ''; quantityInput.disabled = true; quantityInput.placeholder = "Число(+) або 0+Число(-)"; }
@@ -422,38 +414,38 @@
         function handleOutsideClick(event){const aE=document.activeElement;const iA=aE instanceof HTMLElement&&(aE.tagName==='INPUT'||aE.tagName==='TEXTAREA');const t=event.target;const iO=t instanceof Node&&!t.closest('input,textarea,button,label,select,option,[role="button"],[role="tab"],a[href],details,summary');if(iA&&iO)aE.blur();}
 
         // --- Функції теми ---
-        function setTheme(themeName) { try { const isDark=themeName==='dark'; document.body.classList.toggle('dark-theme',isDark); if (themeToggleButton) { const sun=themeToggleButton.querySelector('.theme-icon-sun'); const moon=themeToggleButton.querySelector('.theme-icon-moon'); if(sun)sun.style.display=isDark?'block':'none'; if(moon)moon.style.display=isDark?'none':'block'; themeToggleButton.setAttribute('aria-label', isDark ? 'Світла тема' : 'Темна тема'); } localStorage.setItem('theme', isDark ? 'dark' : 'light'); /* console.log(`Тема:${isDark?'темна':'світла'}`); */ updateSelectArrowColor(); }catch(e){console.error("SetTheme Err:",e);} }
+        function setTheme(themeName) { try { const isDark=themeName==='dark'; document.body.classList.toggle('dark-theme',isDark); if (themeToggleButton) { const sun=themeToggleButton.querySelector('.theme-icon-sun'); const moon=themeToggleButton.querySelector('.theme-icon-moon'); if(sun)sun.style.display=isDark?'block':'none'; if(moon)moon.style.display=isDark?'none':'block'; themeToggleButton.setAttribute('aria-label', isDark ? 'Світла тема' : 'Темна тема'); } localStorage.setItem('theme', isDark ? 'dark' : 'light'); updateSelectArrowColor(); }catch(e){console.error("SetTheme Err:",e);} }
         function toggleTheme() { try {const current=localStorage.getItem('theme'); setTheme(current==='dark'?'light':'dark'); vibrateBasic();}catch(e){console.error("ToggleTheme Err:",e);} }
         function updateSelectArrowColor() { if (!filterSelect) return; try { const mutedColor = getComputedStyle(document.body).getPropertyValue('--secondary-text-color').trim(); const disabledColor = getComputedStyle(document.body).getPropertyValue('--separator-color').trim(); const encodedMuted = encodeURIComponent(mutedColor.startsWith('#') ? mutedColor.substring(1) : mutedColor); const encodedDisabled = encodeURIComponent(disabledColor.startsWith('#') ? disabledColor.substring(1) : disabledColor); const enabledSvg = `url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22%23${encodedMuted}%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M4.22%206.22a.75.75%200%20011.06%200L8%208.94l2.72-2.72a.75.75%200%20111.06%201.06l-3.25%203.25a.75.75%200%2001-1.06%200L4.22%207.28a.75.75%200%20010-1.06z%22%20clip-rule%3D%22evenodd%22%20%2F%3E%3C%2Fsvg%3E')`; const disabledSvg = `url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22%23${encodedDisabled}%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M4.22%206.22a.75.75%200%20011.06%200L8%208.94l2.72-2.72a.75.75%200%20111.06%201.06l-3.25%203.25a.75.75%200%2001-1.06%200L4.22%207.28a.75.75%200%20010-1.06z%22%20clip-rule%3D%22evenodd%22%20%2F%3E%3C%2Fsvg%3E')`; filterSelect.style.backgroundImage = filterSelect.disabled ? disabledSvg : enabledSvg; } catch (e) { console.warn("Update arrow err:", e); } }
 
         // --- Ініціалізація додатку ---
         async function initializeApp() {
-             console.log("Ініціалізація v1.3.6..."); // Оновлено версію
+             console.log("Ініціалізація v1.3.7..."); // Оновлено версію
              // 1. Тема
              try{const sT=localStorage.getItem('theme');if(sT)setTheme(sT);else{if(window.matchMedia?.('(prefers-color-scheme:dark)')?.matches)setTheme('dark');else setTheme('light');}}catch(e){console.error("Тема Err:",e)}
              // 2. БД та дані
-             try { console.log("БД..."); await openDB(); console.log("БД Ok."); let lI=null,lM=null; try{[lI,lM]=await Promise.all([getAllItemsFromDB(),getMetadataFromDB()]);console.log("Дані з БД Ok.");}catch(e){console.error("Дані Err:",e);items=[];fileMetadata={originalName:null,loadDate:null};} if(lI?.length>0){items=lI;fileMetadata=lM||{originalName:null,loadDate:null};console.log(`Відновлено:${items.length}.`);showToast("Сесію відновлено.","success",2000);}else{console.log("Дані відсутні.");items=[];fileMetadata={originalName:null,loadDate:null};} lastDisplayedItem=null; console.log("UI...");updateUI(); console.log("UI Ok.");
+             try { console.log("БД..."); await openDB(); console.log("БД Ok."); let lI=null,lM=null; try{[lI,lM]=await Promise.all([getAllItemsFromDB(),getMetadataFromDB()]);console.log("Дані з БД Ok.");}catch(e){console.error("Дані Err:",e);items=[];fileMetadata={originalName:null,loadDate:null};} if(lI?.length>0){items=lI;fileMetadata=lM||{originalName:null,loadDate:null};console.log(`Відновлено:${items.length}.`);showToast("Сесію відновлено.","success",2000);}else{console.log("Дані відсутні.");items=[];fileMetadata={originalName:null,loadDate:null};} lastDisplayedItem=null; updateUI(); console.log("UI оновлено.");
              } catch (e) { console.error("Init DB Err:",e);showToast(`Init DB Err:${e.message||e}`,'error',5000);items=[];fileMetadata={originalName:null,loadDate:null};lastDisplayedItem=null;try{updateUI();}catch(e2){} }
              // 3. UI та Обробники
              try { console.log("UI Cfg...");clearInputs();updateControlStates();switchToTab('inventory-tab'); console.log("Listeners...");
                  fileInput?.addEventListener('change',handleFile);
                  uploadButton?.addEventListener('click',()=>{ fileInput?.click(); });
-                 skuInput?.addEventListener('change',handleSkuInput);
-                 quantityInput?.addEventListener('change',handleQuantityInput);
-                 quantityInput?.addEventListener('keydown',handleQuantityInput);
+                 skuInput?.addEventListener('change',handleSkuInput); // Спрацьовує при втраті фокусу або Enter
+                 quantityInput?.addEventListener('change',handleQuantityInput); // Спрацьовує при втраті фокусу
+                 quantityInput?.addEventListener('keydown',handleQuantityInput); // Спрацьовує при натисканні клавіш (для Enter)
                  saveButton?.addEventListener('click',()=>{saveResultsToFile();vibrateBasic();});
                  clearButton?.addEventListener('click',()=>{clearAllData(true);});
                  filterSelect?.addEventListener('change',handleFilterChange);
                  nameSearchInput?.addEventListener('input', handleNameSearchInput);
-                 // ДОДАНО: Слухачі для нових кнопок
+                 // ДОДАНО: Слухачі для нових кнопок підтвердження
                  skuSubmitButton?.addEventListener('click', handleSkuInput);
-                 quantitySubmitButton?.addEventListener('click', () => handleQuantityInput(null)); // Передаємо null замість event
+                 quantitySubmitButton?.addEventListener('click', () => handleQuantityInput(null)); // null замість event
 
                  tabButtons.forEach(b=>{b?.addEventListener('click',()=>switchToTab(b.dataset.tab));});
                  themeToggleButton?.addEventListener('click',toggleTheme);
                  document.addEventListener('click',handleOutsideClick);
                  console.log("   - Listeners Ok."); console.log("Фокус...");skuInput?.focus();console.log("Фокус Ok.");
-                 console.log("===== INIT v1.3.6 DONE ====="); // Оновлено версію
+                 console.log("===== INIT v1.3.7 DONE ====="); // Оновлено версію
              } catch (e) { console.error("Init UI Err:",e);showToast(`UI Init Err:${e.message||e}`,'error',5000); }
              updateSelectArrowColor();
         }
