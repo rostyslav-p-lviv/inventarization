@@ -693,24 +693,9 @@ function renderTable() {
         const row = document.createElement('tr');
         row.dataset.sku = item.sku;
         
-        // Додаємо обробники подій
-        row.addEventListener('click', () => {
-            document.querySelector('.tab[data-tab="scan"]').click();
-            document.getElementById('sku-input').value = item.sku;
-            handleSkuInput();
-        });
-        
-        row.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            document.querySelector('.tab[data-tab="scan"]').click();
-            document.getElementById('sku-input').value = item.sku;
-            handleSkuInput();
-            document.getElementById('quantity-input').focus();
-        });
-        
-        // Статус (окрема комірка для кожного товару)
+        // Статус
         const statusCell = document.createElement('td');
-        statusCell.className = 'status-cell';
+        statusCell.className = `status-cell status-${item.status.toLowerCase().replace(' ', '-')}`;
         statusCell.textContent = item.status;
         
         // Назва
@@ -720,21 +705,28 @@ function renderTable() {
         // Очікувано
         const expectedCell = document.createElement('td');
         expectedCell.textContent = item.expectedQuantity;
+        expectedCell.className = 'number-cell';
         
         // Фактично
         const actualCell = document.createElement('td');
         actualCell.textContent = item.actualQuantity !== null ? item.actualQuantity : '—';
+        actualCell.className = 'number-cell';
         
-        // Додаємо всі комірки до рядка
         row.appendChild(statusCell);
         row.appendChild(nameCell);
         row.appendChild(expectedCell);
         row.appendChild(actualCell);
         
+        // Додаємо обробники подій
+        row.addEventListener('click', () => {
+            document.querySelector('.tab[data-tab="scan"]').click();
+            document.getElementById('sku-input').value = item.sku;
+            handleSkuInput();
+        });
+        
         tableBody.appendChild(row);
     });
 }
-
 function renderResultsTable() {
     const tableBody = document.querySelector('#results-table tbody');
     tableBody.innerHTML = '';
