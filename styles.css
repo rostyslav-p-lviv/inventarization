@@ -289,62 +289,48 @@ h1 {
     color: var(--text-color);
 }
 
-#items-table-container, #results-table-container {
-    overflow-x: auto;
-    max-width: 100%;
-}
-
-table {
+#items-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
+    margin-top: 15px;
 }
 
-th, td {
-    padding: 10px;
+#items-table th, #items-table td {
+    padding: 12px 15px;
     text-align: left;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #E5C7C5;
 }
 
-th {
-    font-weight: 500;
-    background-color: rgba(0, 0, 0, 0.05);
+#items-table th {
+    background-color: #F4E2DE;
+    font-weight: 600;
+    color: #2B2B2F;
 }
 
-tr {
-    transition: background-color 0.2s;
-}
-
-tr:active {
-    background-color: rgba(0, 0, 0, 0.1);
+#items-table tr:hover {
+    background-color: #f8f0ef;
+    cursor: pointer;
 }
 
 .status-cell {
-    display: flex;
-    align-items: center;
+    font-weight: 600;
+    text-transform: capitalize;
 }
 
-.status-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    margin-right: 5px;
+.status-cell[data-status="Відповідність"] {
+    color: #34a853;
 }
 
-.status-match {
-    background-color: var(--secondary-color);
+.status-cell[data-status="Нестача"] {
+    color: #ea4335;
 }
 
-.status-shortage {
-    background-color: var(--danger-color);
+.status-cell[data-status="Надлишок"] {
+    color: #fbbc05;
 }
 
-.status-excess {
-    background-color: var(--warning-color);
-}
-
-.status-unchecked {
-    background-color: var(--neutral-color);
+.status-cell[data-status="Не перевірено"] {
+    color: #9e9e9e;
 }
 
 #results-info {
