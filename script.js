@@ -678,11 +678,9 @@ function renderTable() {
     const tableBody = document.querySelector('#items-table tbody');
     tableBody.innerHTML = '';
     
-    // Отримати поточні фільтри
     const statusFilter = document.getElementById('status-filter').value;
     const searchQuery = document.getElementById('search-input').value.toLowerCase();
     
-    // Фільтрувати товари
     const filteredItems = items.filter(item => {
         const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
         const matchesSearch = searchQuery === '' || 
@@ -691,14 +689,12 @@ function renderTable() {
         return matchesStatus && matchesSearch;
     });
     
-    // Додати товари до таблиці
     filteredItems.forEach(item => {
         const row = document.createElement('tr');
         row.dataset.sku = item.sku;
         
-        // Додати обробники подій для рядка
+        // Додаємо обробники подій
         row.addEventListener('click', () => {
-            // Перейти на вкладку "Сканування" з вибраним SKU
             document.querySelector('.tab[data-tab="scan"]').click();
             document.getElementById('sku-input').value = item.sku;
             handleSkuInput();
@@ -706,47 +702,33 @@ function renderTable() {
         
         row.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            // Перейти на вкладку "Сканування" з вибраним SKU та фокусом на кількості
             document.querySelector('.tab[data-tab="scan"]').click();
             document.getElementById('sku-input').value = item.sku;
             handleSkuInput();
             document.getElementById('quantity-input').focus();
         });
         
-        // Статус
+        // Статус (окрема комірка для кожного товару)
         const statusCell = document.createElement('td');
         statusCell.className = 'status-cell';
-        
-        const statusDot = document.createElement('div');
-        statusDot.className = 'status-dot';
-        statusDot.classList.add(`status-${item.status.toLowerCase().replace(' ', '-')}`);
-        statusDot.style.backgroundColor = STATUS_COLORS[item.status] || STATUS_COLORS[STATUS.UNCHECKED];
-        
-        const statusText = document.createElement('span');
-        statusText.textContent = item.status;
-        
-        statusCell.appendChild(statusDot);
-        statusCell.appendChild(statusText);
-        row.appendChild(statusCell);
-        
-        // Артикул
-        const skuCell = document.createElement('td');
-        skuCell.textContent = item.sku;
-        row.appendChild(skuCell);
+        statusCell.textContent = item.status;
         
         // Назва
         const nameCell = document.createElement('td');
         nameCell.textContent = item.name;
-        row.appendChild(nameCell);
         
         // Очікувано
         const expectedCell = document.createElement('td');
         expectedCell.textContent = item.expectedQuantity;
-        row.appendChild(expectedCell);
         
         // Фактично
         const actualCell = document.createElement('td');
         actualCell.textContent = item.actualQuantity !== null ? item.actualQuantity : '—';
+        
+        // Додаємо всі комірки до рядка
+        row.appendChild(statusCell);
+        row.appendChild(nameCell);
+        row.appendChild(expectedCell);
         row.appendChild(actualCell);
         
         tableBody.appendChild(row);
