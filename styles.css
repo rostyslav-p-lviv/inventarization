@@ -291,46 +291,63 @@ h1 {
 
 #items-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     margin-top: 15px;
-}
-
-#items-table th, #items-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #E5C7C5;
+    font-size: 14px;
 }
 
 #items-table th {
+    position: sticky;
+    top: 0;
     background-color: #F4E2DE;
     font-weight: 600;
     color: #2B2B2F;
+    padding: 12px 15px;
+    border-bottom: 2px solid #E5C7C5;
+}
+
+#items-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #E5C7C5;
+    vertical-align: top;
+}
+
+#items-table tr:last-child td {
+    border-bottom: none;
 }
 
 #items-table tr:hover {
     background-color: #f8f0ef;
-    cursor: pointer;
 }
 
 .status-cell {
     font-weight: 600;
+    white-space: nowrap;
     text-transform: capitalize;
+    padding-right: 20px;
 }
 
-.status-cell[data-status="Відповідність"] {
+.status-match {
     color: #34a853;
 }
 
-.status-cell[data-status="Нестача"] {
+.status-shortage {
     color: #ea4335;
 }
 
-.status-cell[data-status="Надлишок"] {
+.status-excess {
     color: #fbbc05;
 }
 
-.status-cell[data-status="Не перевірено"] {
+.status-unchecked {
     color: #9e9e9e;
+}
+
+.number-cell {
+    text-align: right;
+    font-family: monospace;
+    font-weight: 600;
 }
 
 #results-info {
